@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>The Soundscape Chamber</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400&display=swap" rel="stylesheet">
+
+<link rel="icon" type="image/png" href="https://static.tumblr.com/anch44y/xxtto9ify/chambertl.png">
+
+<style>
+
+.signature {
+    position: fixed;
+    bottom: 18px;
+    left: 22px;
+    font-family: 'Libre Baskerville', serif;
+    font-size: 11px;
+    color: #555;
+    opacity: 0.75;
+    letter-spacing: 1px;
+    z-index: 100;
+    pointer-events: none;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    min-height: 100%;
+    background: #000000;
+}
+
+body {
+    color: #ffffff;
+    font-family: "Libre Baskerville", Baskerville, serif;
+    font-weight: 400;
+    overflow-x: hidden;
+}
+
+.chamber {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 30px 20px;
+    text-align: center;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.content {
+    width: 100%;
+    max-width: 620px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: auto;
+}
+
+.title-area {
+    position: relative;
+    display: inline-block;
+}
+
+.title-button {
+    position: relative;
+    z-index: 2;
+    display: block;
+    padding: 0;
+    margin: 0;
+    background: none;
+    border: none;
+    color: #242424;
+    font-family: inherit;
+    font-size: 19px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+
+    transition:
+        color 1.8s ease,
+        letter-spacing 2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.title-button:hover,
+.title-button.selected {
+    color: #ffffff;
+}
+
+.title-button:hover {
+    letter-spacing: 3px;
+}
+
+.chamber-logo {
+    position: fixed;
+    width: 170px;
+    height: auto;
+    left: 50%;
+    top: 50%;
+    transform: translate3d(-50%, -50%, 0);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 5;
+    transition: opacity 2.5s ease;
+    will-change: opacity;
+}
+
+body:has(.title-button:hover) .chamber-logo {
+    opacity: 0.75;
+}
+
+.playlist-list {
+    width: 100%;
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    margin-top: 0;
+    overflow: hidden;
+    transform: translateY(-8px);
+
+    transition:
+        max-height 1.8s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 1.6s ease,
+        transform 1.8s cubic-bezier(0.22, 1, 0.36, 1),
+        margin-top 1.8s cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0s linear 1.8s;
+}
+
+.playlist-list-inner {
+    width: 100%;
+    overflow: hidden;
+}
+
+.content.expanded .playlist-list {
+    max-height: 350px;
+    opacity: 1;
+    visibility: visible;
+    margin-top: 35px;
+    transform: translateY(0);
+
+    transition:
+        max-height 1.8s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 1.6s ease,
+        transform 1.8s cubic-bezier(0.22, 1, 0.36, 1),
+        margin-top 1.8s cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0s;
+}
+
+.playlist {
+    display: block;
+    width: 100%;
+    padding: 0;
+    margin: 0 0 17px;
+
+    background: none;
+    border: none;
+    color: #777777;
+
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    line-height: 1.8;
+    text-align: center;
+
+    cursor: pointer;
+
+    transform: translateZ(0) scale(1);
+
+    transition:
+        opacity 1.8s ease,
+        letter-spacing 2s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+
+    backface-visibility: hidden;
+}
+
+.playlist:hover {
+    opacity: 0.25;
+    letter-spacing: 3px;
+}
+
+.playlist.unlocked {
+    color: #ffffff;
+}
+
+.playlist.active {
+    transform: translateZ(0) scale(1.16);
+}
+
+.playlist:last-child {
+    margin-bottom: 0;
+}
+
+.locked-label {
+    display: inline-block;
+    margin-left: 5px;
+    font-size: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+}
+
+.player-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 30px;
+    background: rgba(0, 0, 0, 0.88);
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+
+    transition:
+        opacity 1.8s ease,
+        visibility 0s linear 1.8s;
+}
+
+.player-overlay.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+
+    transition:
+        opacity 1.8s ease,
+        visibility 0s;
+}
+
+.player-container {
+    position: relative;
+    width: 100%;
+    max-width: 620px;
+    height: 532px;
+    opacity: 0;
+
+    transition: opacity 1.8s ease;
+    will-change: opacity;
+}
+
+.player-overlay.open .player-container {
+    opacity: 1;
+}
+
+.player {
+    display: block;
+    width: 100%;
+    height: 532px;
+    border: none;
+    border-radius: 0;
+}
+
+.password-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.90);
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+
+    transition:
+        opacity 1.5s ease,
+        visibility 0s linear 1.5s;
+}
+
+.password-overlay.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+
+    transition:
+        opacity 1.5s ease,
+        visibility 0s;
+}
+
+.password-window {
+    width: 100%;
+    max-width: 340px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    opacity: 0;
+    transform: translateY(8px);
+
+    transition:
+        opacity 1.5s ease,
+        transform 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.password-overlay.open .password-window {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.password-title {
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 19px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    margin-bottom: 28px;
+}
+
+.password-input {
+    width: 100%;
+    padding: 11px 5px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #444444;
+    outline: none;
+
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    text-align: center;
+    letter-spacing: 2px;
+
+    transition: border-color 0.8s ease;
+}
+
+.password-input:focus {
+    border-bottom-color: #ffffff;
+}
+
+.password-input::placeholder {
+    color: #555555;
+    letter-spacing: 1px;
+}
+
+.password-submit {
+    margin-top: 27px;
+    padding: 5px 15px;
+
+    background: none;
+    border: none;
+    color: #777777;
+
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 1px;
+
+    cursor: pointer;
+
+    transition: color 0.8s ease;
+}
+
+.password-submit:hover {
+    color: #ffffff;
+}
+
+.password-error {
+    min-height: 20px;
+    margin-top: 14px;
+    color: #777777;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+    opacity: 0;
+
+    transition: opacity 0.6s ease;
+}
+
+.password-error.visible {
+    opacity: 1;
+}
+
+.password-close {
+    position: absolute;
+    top: 25px;
+    right: 30px;
+
+    background: none;
+    border: none;
+    color: #666666;
+
+    font-family: inherit;
+    font-size: 20px;
+
+    cursor: pointer;
+
+    transition: color 0.6s ease;
+}
+
+.password-close:hover {
+    color: #ffffff;
+}
+
+/* CONFIRMATION WINDOW */
+
+.confirmation-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.92);
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+
+    transition:
+        opacity 1.5s ease,
+        visibility 0s linear 1.5s;
+}
+
+.confirmation-overlay.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+
+    transition:
+        opacity 1.5s ease,
+        visibility 0s;
+}
+
+.confirmation-window {
+    width: 100%;
+    max-width: 340px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    opacity: 0;
+    transform: translateY(8px);
+
+    transition:
+        opacity 1.5s ease,
+        transform 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.confirmation-overlay.open .confirmation-window {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.confirmation-message {
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    text-align: center;
+}
+
+.confirmation-submit {
+    margin-top: 27px;
+    padding: 5px 15px;
+
+    background: none;
+    border: none;
+    color: #777777;
+
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 1px;
+
+    cursor: pointer;
+
+    transition: color 0.8s ease;
+}
+
+.confirmation-submit:hover {
+    color: #ffffff;
+}
+
+@media (max-width: 600px) {
+
+    .chamber {
+        padding: 20px 15px;
+    }
+
+    .player-overlay {
+        padding: 15px;
+    }
+
+    .player-container {
+        max-width: 100%;
+        height: 532px;
+    }
+
+    .player {
+        height: 532px;
+    }
+
+    .password-close {
+        right: 20px;
+    }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .title-button,
+    .chamber-logo,
+    .playlist-list,
+    .playlist,
+    .player-overlay,
+    .player-container,
+    .password-overlay,
+    .password-window,
+    .password-input,
+    .password-submit,
+    .password-error,
+    .confirmation-overlay,
+    .confirmation-window,
+    .confirmation-submit {
+        transition-duration: 0.01ms;
+    }
+
+}
+
+/*Si satis diu in abyssum inspicias, abyssus in te respiciet.*/
+
+</style>
+</head>
+
+<body>
+<div class="signature">© DV.</div>
+
+<img
+    src="https://static.tumblr.com/anch44y/prVto9i6g/thechamberlogo.png"
+    class="chamber-logo"
+    alt=""
+>
+
+<main class="chamber">
+
+    <div class="content" id="chamberContent">
+
+        <div class="title-area">
+
+            <button
+                class="title-button"
+                id="titleButton"
+                type="button"
+                aria-expanded="false"
+                aria-controls="playlistList">
+
+                The Soundscape Chamber
+
+            </button>
+
+        </div>
+
+        <div class="playlist-list" id="playlistList">
+
+            <div class="playlist-list-inner">
+
+                <button class="playlist" type="button" data-playlist="midnight">
+                    Midnight Transmission<span class="locked-label">[Locked]</span>
+                </button>
+
+                <button class="playlist" type="button" data-playlist="expedition">
+                    Expedition to Soul Cairn<span class="locked-label">[Locked]</span>
+                </button>
+
+                <button class="playlist" type="button" data-playlist="elder-scrolls">
+                    Winds of the Rift<span class="locked-label">[Locked]</span>
+                </button>
+
+                <button class="playlist" type="button" data-playlist="wanderer">
+                    Wanderer's Solace<span class="locked-label">[Locked]</span>
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</main>
+
+<div
+    class="player-overlay"
+    id="playerOverlay"
+    aria-hidden="true"
+>
+
+    <div
+        class="player-container"
+        id="playerContainer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Spotify playlist"
+    >
+
+        <iframe
+            class="player"
+            id="spotifyPlayer"
+            src="about:blank"
+            width="100%"
+            height="532"
+            frameborder="0"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy"
+            title="Spotify playlist"
+        ></iframe>
+
+    </div>
+
+</div>
+
+<div
+    class="password-overlay"
+    id="passwordOverlay"
+    aria-hidden="true"
+>
+
+    <button
+        class="password-close"
+        id="passwordClose"
+        type="button"
+        aria-label="Close password window">
+        ×
+    </button>
+
+    <form class="password-window" id="passwordForm">
+
+        <div class="password-title">Quod est verbum?
+</div>
+
+        <input
+            class="password-input"
+            id="passwordInput"
+            type="password"
+            placeholder=""
+            autocomplete="off"
+            aria-label="Password"
+            required
+        >
+
+        <button class="password-submit" type="submit">
+            WHISPER IT
+        </button>
+
+        <div class="password-error" id="passwordError">
+            It has heard you.
+        </div>
+
+    </form>
+
+</div>
+
+<!-- YOU WERE EXPECTED -->
+
+<div
+    class="confirmation-overlay"
+    id="confirmationOverlay"
+    aria-hidden="true"
+>
+
+    <div
+        class="confirmation-window"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirmationMessage"
+    >
+
+        <div class="confirmation-message" id="confirmationMessage">
+            You were expected.
+        </div>
+
+        <button
+            class="confirmation-submit"
+            id="confirmationSubmit"
+            type="button">
+            ENTER
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+
+const content = document.getElementById("chamberContent");
+const titleButton = document.getElementById("titleButton");
+
+const playlists = document.querySelectorAll(".playlist");
+
+const playerOverlay = document.getElementById("playerOverlay");
+const spotifyPlayer = document.getElementById("spotifyPlayer");
+
+const passwordOverlay = document.getElementById("passwordOverlay");
+const passwordForm = document.getElementById("passwordForm");
+const passwordInput = document.getElementById("passwordInput");
+const passwordError = document.getElementById("passwordError");
+const passwordClose = document.getElementById("passwordClose");
+
+const confirmationOverlay = document.getElementById("confirmationOverlay");
+const confirmationSubmit = document.getElementById("confirmationSubmit");
+
+const playlistPasswords = {
+
+    /*
+    Aliquando interrogaberis.
+    Cum caecus in tenebris fueris et oculi in vultu tuo defuerint,
+    angelus super corpus tuum aderit.
+
+    Te interrogabit.
+    Quid egisti... cum anima tua?
+    */
+
+    midnight: "LIGHT",
+
+    expedition: "DEVOURS",
+
+    "elder-scrolls": "MORTALS",
+
+    wanderer: "UNTIL DUST"
+
+}; /* Abyssus abyssum invocat. */
+
+const playlistLinks = {
+
+    midnight:
+        "https://open.spotify.com/embed/playlist/0K8OkZr5V7UmlDBiLYecK4?utm_source=generator&theme=0",
+
+    expedition:
+        "https://open.spotify.com/embed/playlist/4gTGYgvB0w9jH1ijqYYuEl?utm_source=generator&theme=0",
+
+    "elder-scrolls":
+        "https://open.spotify.com/embed/playlist/4EVX0L5RWfdttGAHMNilsT?utm_source=generator&theme=0",
+
+    wanderer:
+        "https://open.spotify.com/embed/playlist/2CjTB7TRMcLwaPsVQVGSc9?utm_source=generator&theme=0"
+
+};
+
+let selectedPlaylist = null;
+let pendingPlaylistId = null;
+let playerOpen = false;
+
+titleButton.addEventListener("click", function() {
+
+    const isExpanded = content.classList.toggle("expanded");
+
+    titleButton.classList.add("selected");
+
+    titleButton.setAttribute("aria-expanded", String(isExpanded));
+
+});
+
+playlists.forEach(function(playlist) {
+
+    playlist.addEventListener("click", function() {
+
+        const playlistId = playlist.dataset.playlist;
+
+        if (playlist.classList.contains("unlocked")) {
+            openPlayer(playlistId);
+            return;
+        }
+
+        selectedPlaylist = playlist;
+
+        passwordInput.value = "";
+        passwordError.classList.remove("visible");
+
+        passwordOverlay.classList.add("open");
+        passwordOverlay.setAttribute("aria-hidden", "false");
+
+        setTimeout(function() {
+            passwordInput.focus();
+        }, 400);
+
+    });
+
+});
+
+passwordForm.addEventListener("submit", function(event) {
+
+    event.preventDefault();
+
+    if (!selectedPlaylist) return;
+
+    const playlistId = selectedPlaylist.dataset.playlist;
+
+    if (passwordInput.value === playlistPasswords[playlistId]) {
+
+        const label = selectedPlaylist.querySelector(".locked-label");
+
+        if (label) {
+            label.remove();
+        }
+
+        selectedPlaylist.classList.add("unlocked");
+
+        pendingPlaylistId = playlistId;
+
+        closePasswordWindow();
+
+        setTimeout(function() {
+
+            confirmationOverlay.classList.add("open");
+            confirmationOverlay.setAttribute("aria-hidden", "false");
+
+            confirmationSubmit.focus();
+
+        }, 450);
+
+    } else {
+
+        passwordError.classList.add("visible");
+
+        passwordInput.value = "";
+        passwordInput.focus();
+
+    }
+
+});
+
+function closeConfirmationWindow() {
+
+    confirmationOverlay.classList.remove("open");
+    confirmationOverlay.setAttribute("aria-hidden", "true");
+
+}
+
+function confirmPlaylistAccess() {
+
+    if (!pendingPlaylistId) return;
+
+    const playlistId = pendingPlaylistId;
+
+    pendingPlaylistId = null;
+
+    closeConfirmationWindow();
+
+    setTimeout(function() {
+        openPlayer(playlistId);
+    }, 450);
+
+}
+
+confirmationSubmit.addEventListener("click", confirmPlaylistAccess);
+
+function openPlayer(playlistId) {
+
+    const link = playlistLinks[playlistId];
+
+    if (!link) return;
+
+    spotifyPlayer.src = link;
+
+    playerOverlay.classList.add("open");
+    playerOverlay.setAttribute("aria-hidden", "false");
+
+    const playlist = document.querySelector(
+        '[data-playlist="' + playlistId + '"]'
+    );
+
+    playlists.forEach(function(item) {
+        item.classList.remove("active");
+    });
+
+    playlist.classList.add("active");
+
+    playerOpen = true;
+
+}
+
+function closePlayer() {
+
+    playerOverlay.classList.remove("open");
+    playerOverlay.setAttribute("aria-hidden", "true");
+
+    playlists.forEach(function(item) {
+        item.classList.remove("active");
+    });
+
+    playerOpen = false;
+
+}
+
+function closePasswordWindow() {
+
+    passwordOverlay.classList.remove("open");
+    passwordOverlay.setAttribute("aria-hidden", "true");
+
+    passwordInput.value = "";
+    passwordError.classList.remove("visible");
+
+    selectedPlaylist = null;
+
+}
+
+passwordClose.addEventListener("click", closePasswordWindow);
+
+passwordOverlay.addEventListener("click", function(event) {
+
+    if (event.target === passwordOverlay) {
+        closePasswordWindow();
+    }
+
+});
+
+playerOverlay.addEventListener("click", function(event) {
+
+    if (event.target === playerOverlay) {
+        closePlayer();
+    }
+
+});
+
+document.addEventListener("keydown", function(event) {
+
+    if (
+        event.key === "Enter" &&
+        confirmationOverlay.classList.contains("open")
+    ) {
+
+        event.preventDefault();
+
+        confirmPlaylistAccess();
+
+        return;
+
+    }
+
+    if (event.key === "Escape") {
+
+        if (confirmationOverlay.classList.contains("open")) {
+
+            closeConfirmationWindow();
+            pendingPlaylistId = null;
+
+        } else if (passwordOverlay.classList.contains("open")) {
+
+            closePasswordWindow();
+
+        } else if (playerOpen) {
+
+            closePlayer();
+
+        }
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>
